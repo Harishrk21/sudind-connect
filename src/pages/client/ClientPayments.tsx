@@ -4,7 +4,7 @@ import { CreditCard, DollarSign, CheckCircle2, Clock, Download, AlertCircle } fr
 import { useAuth } from '@/contexts/AuthContext';
 import { useDataStore } from '@/contexts/DataStore';
 import { getCasesByClient, getInvoicesByCase, Invoice } from '@/lib/mockData';
-import { cn } from '@/lib/utils';
+import { cn, downloadDemoFile, InvoiceData } from '@/lib/utils';
 
 const ClientPayments: React.FC = () => {
   const { user } = useAuth();
@@ -144,7 +144,25 @@ const ClientPayments: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-4">
                     <p className="font-semibold text-foreground">${inv.amount.toLocaleString()}</p>
-                    <button className="p-2 rounded-lg hover:bg-muted transition-colors">
+                    <button 
+                      className="p-2 rounded-lg hover:bg-muted transition-colors"
+                      onClick={() => {
+                        const invoiceData: InvoiceData = {
+                          invoiceId: inv.invoiceId,
+                          caseId: inv.caseId,
+                          amount: inv.amount,
+                          currency: inv.currency,
+                          status: inv.status,
+                          issuedAt: inv.issuedAt,
+                          paidAt: inv.paidAt,
+                          dueDate: inv.dueDate,
+                          description: inv.description,
+                          clientName: user.name,
+                        };
+                        downloadDemoFile(`invoice-receipt-${inv.invoiceId}.pdf`, 'invoice', invoiceData);
+                      }}
+                      title="Download Invoice Receipt"
+                    >
                       <Download className="w-5 h-5 text-muted-foreground" />
                     </button>
                   </div>

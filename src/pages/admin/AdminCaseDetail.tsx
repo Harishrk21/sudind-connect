@@ -28,7 +28,7 @@ import {
   CaseStatus,
   getStatusLabel,
 } from '@/lib/mockData';
-import { cn } from '@/lib/utils';
+import { cn, downloadDemoFile, DocumentData } from '@/lib/utils';
 import UpdateCaseStatusForm from '@/components/forms/UpdateCaseStatusForm';
 
 const AdminCaseDetail: React.FC = () => {
@@ -281,7 +281,21 @@ const AdminCaseDetail: React.FC = () => {
                       >
                         <Forward className="w-4 h-4 text-primary" />
                       </button>
-                      <button className="p-2 rounded-lg hover:bg-muted transition-colors">
+                      <button 
+                        className="p-2 rounded-lg hover:bg-muted transition-colors"
+                        onClick={() => {
+                          const documentData: DocumentData = {
+                            filename: doc.filename,
+                            type: doc.type,
+                            caseId: doc.caseId,
+                            uploadedAt: doc.uploadedAt,
+                            size: doc.size,
+                            caseTitle: caseData?.title,
+                          };
+                          downloadDemoFile(doc.filename, 'document', documentData);
+                        }}
+                        title="Download Document"
+                      >
                         <Download className="w-5 h-5 text-muted-foreground" />
                       </button>
                     </div>

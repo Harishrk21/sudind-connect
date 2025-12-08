@@ -4,7 +4,7 @@ import KPICard from '@/components/ui/KPICard';
 import DataTable from '@/components/ui/DataTable';
 import { useDataStore } from '@/contexts/DataStore';
 import { getUserById, Invoice } from '@/lib/mockData';
-import { cn } from '@/lib/utils';
+import { cn, downloadDemoFile, InvoiceData } from '@/lib/utils';
 import GenerateInvoiceForm from '@/components/forms/GenerateInvoiceForm';
 
 const AdminFinancials: React.FC = () => {
@@ -93,7 +93,33 @@ const AdminFinancials: React.FC = () => {
     {
       key: 'action',
       header: '',
-      render: () => <Download className="w-4 h-4 text-muted-foreground" />,
+      render: (item: Invoice) => {
+        const client = users.find(u => u.id === item.clientId);
+        const invoiceData: InvoiceData = {
+          invoiceId: item.invoiceId,
+          caseId: item.caseId,
+          amount: item.amount,
+          currency: item.currency,
+          status: item.status,
+          issuedAt: item.issuedAt,
+          paidAt: item.paidAt,
+          dueDate: item.dueDate,
+          description: item.description,
+          clientName: client?.name,
+        };
+        return (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              downloadDemoFile(`invoice-${item.invoiceId}.pdf`, 'invoice', invoiceData);
+            }}
+            className="p-1 rounded hover:bg-muted transition-colors"
+            title="Download Invoice"
+          >
+            <Download className="w-4 h-4 text-muted-foreground" />
+          </button>
+        );
+      },
       className: 'w-10',
     },
   ];

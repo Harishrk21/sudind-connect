@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, Download, BarChart3, PieChart, TrendingUp, Calendar, Filter } from 'lucide-react';
 import { useDataStore } from '@/contexts/DataStore';
-import { cn } from '@/lib/utils';
+import { cn, downloadDemoFile, ReportData } from '@/lib/utils';
 
 const AdminReports: React.FC = () => {
   const { cases, invoices, users } = useDataStore();
@@ -194,7 +194,30 @@ const AdminReports: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <button className="p-2 rounded-lg hover:bg-muted transition-colors">
+              <button 
+                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                onClick={() => {
+                  const reportData: ReportData = {
+                    title: report.title,
+                    type: report.type,
+                    period: reportPeriod,
+                    data: {
+                      'Total Cases': totalCases,
+                      'Medical Cases': medicalCases,
+                      'Academic Cases': academicCases,
+                      'Completed Cases': completedCases,
+                      'Total Revenue': `$${totalRevenue.toLocaleString()}`,
+                      'Completion Rate': `${Math.round((completedCases / totalCases) * 100)}%`,
+                    }
+                  };
+                  downloadDemoFile(
+                    `${report.title.replace(/\s+/g, '-').toLowerCase()}.pdf`,
+                    'report',
+                    reportData
+                  );
+                }}
+                title={`Download ${report.title}`}
+              >
                 <Download className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
