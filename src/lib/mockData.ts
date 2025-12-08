@@ -78,6 +78,59 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface Contract {
+  contractId: string;
+  caseId: string;
+  clientId: number;
+  agentId: number;
+  type: 'medical' | 'academic';
+  status: 'draft' | 'active' | 'expired' | 'archived';
+  title: string;
+  terms: string;
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  archivedAt?: string;
+}
+
+export interface AIProcessing {
+  id: number;
+  caseId: string;
+  documentId: number;
+  type: 'ocr' | 'medical_extraction' | 'certificate_verification' | 'radiology_analysis';
+  status: 'processing' | 'completed' | 'failed';
+  extractedData?: Record<string, any>;
+  confidence: number;
+  processedAt: string;
+}
+
+export interface Hospital {
+  id: number;
+  name: string;
+  city: string;
+  country: string;
+  specialties: string[];
+  rating: number;
+  integrationStatus: 'connected' | 'pending' | 'disconnected';
+}
+
+export interface University {
+  id: number;
+  name: string;
+  city: string;
+  country: string;
+  programs: string[];
+  rating: number;
+  integrationStatus: 'connected' | 'pending' | 'disconnected';
+}
+
+export interface PaymentMethod {
+  id: string;
+  type: 'mobile_money' | 'bank_card' | 'bank_transfer';
+  name: string;
+  enabled: boolean;
+}
+
 // Mock Users
 export const users: User[] = [
   {
@@ -391,16 +444,43 @@ export const notifications: Notification[] = [
   { id: 5, userId: 7, title: 'Admission Approved', message: 'Your MBBS admission has been approved!', type: 'success', read: false, createdAt: '2024-12-02T09:00:00Z' },
 ];
 
-// Helper functions
-export const getUserById = (id: number): User | undefined => users.find(u => u.id === id);
-export const getCaseById = (caseId: string): Case | undefined => cases.find(c => c.caseId === caseId);
-export const getDocumentsByCase = (caseId: string): Document[] => documents.filter(d => d.caseId === caseId);
-export const getInvoicesByCase = (caseId: string): Invoice[] => invoices.filter(i => i.caseId === caseId);
-export const getMessagesByUser = (userId: number): Message[] => messages.filter(m => m.senderId === userId || m.receiverId === userId);
-export const getNotificationsByUser = (userId: number): Notification[] => notifications.filter(n => n.userId === userId);
-export const getCasesByClient = (clientId: number): Case[] => cases.filter(c => c.clientId === clientId);
-export const getCasesByAgent = (agentId: number): Case[] => cases.filter(c => c.agentId === agentId);
-export const getClientsByAgent = (agentId: number): number[] => [...new Set(cases.filter(c => c.agentId === agentId).map(c => c.clientId))];
+// Helper functions (for backward compatibility - use DataStore in components)
+export const getUserById = (id: number, usersList?: User[]): User | undefined => {
+  const usersToSearch = usersList || users;
+  return usersToSearch.find(u => u.id === id);
+};
+export const getCaseById = (caseId: string, casesList?: Case[]): Case | undefined => {
+  const casesToSearch = casesList || cases;
+  return casesToSearch.find(c => c.caseId === caseId);
+};
+export const getDocumentsByCase = (caseId: string, documentsList?: Document[]): Document[] => {
+  const docsToSearch = documentsList || documents;
+  return docsToSearch.filter(d => d.caseId === caseId);
+};
+export const getInvoicesByCase = (caseId: string, invoicesList?: Invoice[]): Invoice[] => {
+  const invsToSearch = invoicesList || invoices;
+  return invsToSearch.filter(i => i.caseId === caseId);
+};
+export const getMessagesByUser = (userId: number, messagesList?: Message[]): Message[] => {
+  const msgsToSearch = messagesList || messages;
+  return msgsToSearch.filter(m => m.senderId === userId || m.receiverId === userId);
+};
+export const getNotificationsByUser = (userId: number, notificationsList?: Notification[]): Notification[] => {
+  const notifsToSearch = notificationsList || notifications;
+  return notifsToSearch.filter(n => n.userId === userId);
+};
+export const getCasesByClient = (clientId: number, casesList?: Case[]): Case[] => {
+  const casesToSearch = casesList || cases;
+  return casesToSearch.filter(c => c.clientId === clientId);
+};
+export const getCasesByAgent = (agentId: number, casesList?: Case[]): Case[] => {
+  const casesToSearch = casesList || cases;
+  return casesToSearch.filter(c => c.agentId === agentId);
+};
+export const getClientsByAgent = (agentId: number, casesList?: Case[]): number[] => {
+  const casesToSearch = casesList || cases;
+  return [...new Set(casesToSearch.filter(c => c.agentId === agentId).map(c => c.clientId))];
+};
 
 // Status utilities
 export const getStatusLabel = (status: CaseStatus): string => {
@@ -430,3 +510,180 @@ export const getStatusClass = (status: CaseStatus): string => {
   };
   return classes[status];
 };
+
+// Mock Contracts
+export const contracts: Contract[] = [
+  {
+    contractId: 'CNT-001',
+    caseId: 'MED-001',
+    clientId: 5,
+    agentId: 2,
+    type: 'medical',
+    status: 'active',
+    title: 'Medical Treatment Agreement - Cardiac Care',
+    terms: 'Comprehensive cardiac evaluation and treatment services. Includes consultation, diagnostics, and surgical procedures if required.',
+    startDate: '2024-11-20',
+    endDate: '2025-05-20',
+    createdAt: '2024-11-20',
+  },
+  {
+    contractId: 'CNT-002',
+    caseId: 'ACAD-001',
+    clientId: 7,
+    agentId: 3,
+    type: 'academic',
+    status: 'active',
+    title: 'Academic Admission Agreement - MBBS Program',
+    terms: 'Student admission and placement services for MBBS program. Includes visa assistance and accommodation support.',
+    startDate: '2024-11-22',
+    endDate: '2025-11-22',
+    createdAt: '2024-11-22',
+  },
+  {
+    contractId: 'CNT-003',
+    caseId: 'MED-003',
+    clientId: 5,
+    agentId: 3,
+    type: 'medical',
+    status: 'archived',
+    title: 'ENT Treatment Agreement',
+    terms: 'ENT consultation and treatment services.',
+    startDate: '2024-10-15',
+    endDate: '2024-11-20',
+    createdAt: '2024-10-15',
+    archivedAt: '2024-11-20',
+  },
+];
+
+// Mock AI Processing
+export const aiProcessings: AIProcessing[] = [
+  {
+    id: 1,
+    caseId: 'MED-001',
+    documentId: 101,
+    type: 'medical_extraction',
+    status: 'completed',
+    extractedData: {
+      diagnosis: 'Coronary Artery Disease',
+      recommendations: 'Cardiac bypass surgery recommended',
+      medications: ['Aspirin', 'Atorvastatin'],
+    },
+    confidence: 0.92,
+    processedAt: '2024-11-21T10:30:00Z',
+  },
+  {
+    id: 2,
+    caseId: 'MED-001',
+    documentId: 102,
+    type: 'radiology_analysis',
+    status: 'completed',
+    extractedData: {
+      findings: 'Multiple blockages detected in coronary arteries',
+      severity: 'Moderate to Severe',
+    },
+    confidence: 0.88,
+    processedAt: '2024-11-22T14:15:00Z',
+  },
+  {
+    id: 3,
+    caseId: 'ACAD-001',
+    documentId: 107,
+    type: 'certificate_verification',
+    status: 'completed',
+    extractedData: {
+      verified: true,
+      institution: 'Sudan University of Science and Technology',
+      degree: 'High School Diploma',
+      year: '2023',
+    },
+    confidence: 0.95,
+    processedAt: '2024-11-23T09:00:00Z',
+  },
+];
+
+// Mock Hospitals
+export const hospitals: Hospital[] = [
+  {
+    id: 1,
+    name: 'Apollo Hospitals',
+    city: 'Chennai',
+    country: 'India',
+    specialties: ['Cardiology', 'Orthopedics', 'Oncology'],
+    rating: 4.8,
+    integrationStatus: 'connected',
+  },
+  {
+    id: 2,
+    name: 'Fortis Hospital',
+    city: 'Delhi',
+    country: 'India',
+    specialties: ['Orthopedics', 'Neurology'],
+    rating: 4.6,
+    integrationStatus: 'connected',
+  },
+  {
+    id: 3,
+    name: 'Max Healthcare',
+    city: 'Mumbai',
+    country: 'India',
+    specialties: ['ENT', 'General Medicine'],
+    rating: 4.7,
+    integrationStatus: 'connected',
+  },
+  {
+    id: 4,
+    name: 'Tata Memorial Hospital',
+    city: 'Mumbai',
+    country: 'India',
+    specialties: ['Oncology', 'Radiation Therapy'],
+    rating: 4.9,
+    integrationStatus: 'pending',
+  },
+];
+
+// Mock Universities
+export const universities: University[] = [
+  {
+    id: 1,
+    name: 'Manipal University',
+    city: 'Manipal',
+    country: 'India',
+    programs: ['MBBS', 'Engineering', 'MBA'],
+    rating: 4.7,
+    integrationStatus: 'connected',
+  },
+  {
+    id: 2,
+    name: 'VIT University',
+    city: 'Vellore',
+    country: 'India',
+    programs: ['Engineering', 'Computer Science'],
+    rating: 4.6,
+    integrationStatus: 'connected',
+  },
+  {
+    id: 3,
+    name: 'IIM Bangalore',
+    city: 'Bangalore',
+    country: 'India',
+    programs: ['MBA', 'Executive MBA'],
+    rating: 4.9,
+    integrationStatus: 'connected',
+  },
+];
+
+// Mock Payment Methods
+export const paymentMethods: PaymentMethod[] = [
+  { id: 'mm1', type: 'mobile_money', name: 'MTN Mobile Money', enabled: true },
+  { id: 'mm2', type: 'mobile_money', name: 'Zain Cash', enabled: true },
+  { id: 'card1', type: 'bank_card', name: 'Visa/Mastercard', enabled: true },
+  { id: 'transfer1', type: 'bank_transfer', name: 'Bank Transfer', enabled: true },
+];
+
+// Helper functions
+export const getContractById = (contractId: string): Contract | undefined => contracts.find(c => c.contractId === contractId);
+export const getContractsByCase = (caseId: string): Contract[] => contracts.filter(c => c.caseId === caseId);
+export const getAIProcessingByDocument = (documentId: number): AIProcessing | undefined => aiProcessings.find(a => a.documentId === documentId);
+export const getAIProcessingByCase = (caseId: string): AIProcessing[] => aiProcessings.filter(a => a.caseId === caseId);
+export const getHospitalById = (id: number): Hospital | undefined => hospitals.find(h => h.id === id);
+export const getUniversityById = (id: number): University | undefined => universities.find(u => u.id === id);

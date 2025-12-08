@@ -1,9 +1,13 @@
-import React from 'react';
-import { FileText, Download, BarChart3, PieChart, TrendingUp, Calendar } from 'lucide-react';
-import { cases, invoices, users } from '@/lib/mockData';
+import React, { useState } from 'react';
+import { FileText, Download, BarChart3, PieChart, TrendingUp, Calendar, Filter } from 'lucide-react';
+import { useDataStore } from '@/contexts/DataStore';
 import { cn } from '@/lib/utils';
 
 const AdminReports: React.FC = () => {
+  const { cases, invoices, users } = useDataStore();
+  const [reportPeriod, setReportPeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
+  const [reportType, setReportType] = useState<'administrative' | 'financial' | 'all'>('all');
+
   // Calculate stats
   const totalCases = cases.length;
   const medicalCases = cases.filter(c => c.type === 'medical').length;
@@ -49,6 +53,36 @@ const AdminReports: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Report Filters */}
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-foreground mb-1">Reports & Analytics</h2>
+            <p className="text-sm text-muted-foreground">Generate administrative and financial reports</p>
+          </div>
+          <div className="flex gap-3">
+            <select
+              value={reportPeriod}
+              onChange={(e) => setReportPeriod(e.target.value as typeof reportPeriod)}
+              className="input-field w-auto min-w-[120px]"
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+            <select
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value as typeof reportType)}
+              className="input-field w-auto min-w-[150px]"
+            >
+              <option value="all">All Reports</option>
+              <option value="administrative">Administrative</option>
+              <option value="financial">Financial</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl border border-border p-6">
@@ -123,9 +157,22 @@ const AdminReports: React.FC = () => {
 
       {/* Available Reports */}
       <div>
-        <h3 className="font-semibold text-foreground mb-4">Available Reports</h3>
+        <h3 className="font-semibold text-foreground mb-4">
+          Available Reports - {reportPeriod.charAt(0).toUpperCase() + reportPeriod.slice(1)} View
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {reports.map((report, index) => (
+          {reports
+            .filter(report => {
+              if (reportType === 'all') return true;
+              if (reportType === 'administrative') {
+                return report.title.includes('Summary') || report.title.includes('Status') || report.title.includes('Performance');
+              }
+              if (reportType === 'financial') {
+                return report.title.includes('Financial');
+              }
+              return true;
+            })
+            .map((report, index) => (
             <div
               key={index}
               className="bg-card rounded-xl border border-border p-5 flex items-start justify-between hover:shadow-md transition-all cursor-pointer hover:border-primary/30"
@@ -137,9 +184,14 @@ const AdminReports: React.FC = () => {
                 <div>
                   <h4 className="font-medium text-foreground">{report.title}</h4>
                   <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
-                  <span className="inline-block mt-2 text-xs bg-muted px-2 py-1 rounded">
-                    {report.type}
-                  </span>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs bg-muted px-2 py-1 rounded">
+                      {report.type}
+                    </span>
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                      {reportPeriod}
+                    </span>
+                  </div>
                 </div>
               </div>
               <button className="p-2 rounded-lg hover:bg-muted transition-colors">

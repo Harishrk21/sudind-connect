@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, User, Stethoscope, GraduationCap, Globe, ArrowRight } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
-import { users, cases, User as UserType, ClientType } from '@/lib/mockData';
+import { useDataStore } from '@/contexts/DataStore';
+import { User as UserType, ClientType } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
+import AddClientForm from '@/components/forms/AddClientForm';
 
 const AdminClients: React.FC = () => {
   const navigate = useNavigate();
+  const { users, cases } = useDataStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<ClientType | 'all'>('all');
+  const [addClientOpen, setAddClientOpen] = useState(false);
 
   const clients = users.filter(u => u.role === 'client');
 
@@ -145,11 +149,13 @@ const AdminClients: React.FC = () => {
             {filteredClients.length} {filteredClients.length === 1 ? 'client' : 'clients'} registered
           </p>
         </div>
-        <button className="btn-primary">
+        <button className="btn-primary" onClick={() => setAddClientOpen(true)}>
           <Plus className="w-4 h-4" />
           Add Client
         </button>
       </div>
+
+      <AddClientForm open={addClientOpen} onOpenChange={setAddClientOpen} />
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

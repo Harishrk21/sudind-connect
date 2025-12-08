@@ -5,19 +5,21 @@ import KPICard from '@/components/ui/KPICard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import DataTable from '@/components/ui/DataTable';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDataStore } from '@/contexts/DataStore';
 import { getCasesByAgent, getUserById, getMessagesByUser, Case } from '@/lib/mockData';
 
 const AgentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { cases, messages } = useDataStore();
 
   if (!user) return null;
 
-  const myCases = getCasesByAgent(user.id);
+  const myCases = getCasesByAgent(user.id, cases);
   const activeCases = myCases.filter(c => !['completed', 'closed'].includes(c.status));
   const completedCases = myCases.filter(c => ['completed', 'closed'].includes(c.status));
   const pendingCases = myCases.filter(c => ['new', 'review', 'pending'].includes(c.status));
-  const unreadMessages = getMessagesByUser(user.id).filter(m => !m.read && m.receiverId === user.id);
+  const unreadMessages = getMessagesByUser(user.id, messages).filter(m => !m.read && m.receiverId === user.id);
 
   const recentCases = [...myCases]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
@@ -35,7 +37,8 @@ const AgentDashboard: React.FC = () => {
       key: 'client',
       header: 'Client',
       render: (item: Case) => {
-        const client = getUserById(item.clientId);
+        const { users } = useDataStore();
+        const client = users.find(u => u.id === item.clientId);
         return (
           <div>
             <p className="text-foreground">{client?.name}</p>

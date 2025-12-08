@@ -16,10 +16,12 @@ import {
 import KPICard from '@/components/ui/KPICard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import DataTable from '@/components/ui/DataTable';
-import { cases, users, invoices, getUserById, Case, CaseStatus } from '@/lib/mockData';
+import { useDataStore } from '@/contexts/DataStore';
+import { getUserById, Case, CaseStatus } from '@/lib/mockData';
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { users, cases, invoices } = useDataStore();
 
   // Calculate KPIs
   const totalClients = users.filter(u => u.role === 'client').length;

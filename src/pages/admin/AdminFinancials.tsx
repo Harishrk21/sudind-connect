@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
-import { DollarSign, TrendingUp, Clock, CheckCircle2, Download, Search, ArrowRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Clock, CheckCircle2, Download, Search, ArrowRight, Plus } from 'lucide-react';
 import KPICard from '@/components/ui/KPICard';
 import DataTable from '@/components/ui/DataTable';
-import { invoices, getUserById, getCaseById, Invoice } from '@/lib/mockData';
+import { useDataStore } from '@/contexts/DataStore';
+import { getUserById, Invoice } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
+import GenerateInvoiceForm from '@/components/forms/GenerateInvoiceForm';
 
 const AdminFinancials: React.FC = () => {
+  const { invoices, users } = useDataStore();
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'paid' | 'overdue'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [generateInvoiceOpen, setGenerateInvoiceOpen] = useState(false);
 
   const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0);
   const pendingAmount = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + i.amount, 0);
   const overdueAmount = invoices.filter(i => i.status === 'overdue').reduce((sum, i) => sum + i.amount, 0);
 
   const filteredInvoices = invoices.filter((inv) => {
+    const client = users.find(u => u.id === inv.clientId);
     const matchesSearch =
       inv.invoiceId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       inv.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getUserById(inv.clientId)?.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      client?.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
     
     return matchesSearch && matchesStatus;
@@ -36,7 +40,7 @@ const AdminFinancials: React.FC = () => {
       key: 'client',
       header: 'Client',
       render: (item: Invoice) => {
-        const client = getUserById(item.clientId);
+        const client = users.find(u => u.id === item.clientId);
         return <span>{client?.name || 'Unknown'}</span>;
       },
     },
@@ -96,6 +100,20 @@ const AdminFinancials: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Financial Management</h2>
+          <p className="text-muted-foreground">Manage invoices and payments</p>
+        </div>
+        <button className="btn-primary" onClick={() => setGenerateInvoiceOpen(true)}>
+          <Plus className="w-4 h-4" />
+          Generate Invoice
+        </button>
+      </div>
+
+      <GenerateInvoiceForm open={generateInvoiceOpen} onOpenChange={setGenerateInvoiceOpen} />
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KPICard

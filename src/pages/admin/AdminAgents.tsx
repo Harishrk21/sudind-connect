@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, UserCheck, Phone, Mail, ArrowRight, MapPin } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
-import { users, cases, User as UserType } from '@/lib/mockData';
+import { useDataStore } from '@/contexts/DataStore';
+import { User as UserType } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
+import AddAgentForm from '@/components/forms/AddAgentForm';
 
 const AdminAgents: React.FC = () => {
   const navigate = useNavigate();
+  const { users, cases } = useDataStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [addAgentOpen, setAddAgentOpen] = useState(false);
 
   const agents = users.filter(u => u.role === 'agent');
 
@@ -145,11 +149,13 @@ const AdminAgents: React.FC = () => {
             {filteredAgents.length} India {filteredAgents.length === 1 ? 'agent' : 'agents'}
           </p>
         </div>
-        <button className="btn-primary">
+        <button className="btn-primary" onClick={() => setAddAgentOpen(true)}>
           <Plus className="w-4 h-4" />
           Add Agent
         </button>
       </div>
+
+      <AddAgentForm open={addAgentOpen} onOpenChange={setAddAgentOpen} />
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

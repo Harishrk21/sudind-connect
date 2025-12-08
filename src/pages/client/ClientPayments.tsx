@@ -1,30 +1,35 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CreditCard, DollarSign, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDataStore } from '@/contexts/DataStore';
 import { getCasesByClient, getInvoicesByCase, Invoice } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
 
 const ClientPayments: React.FC = () => {
   const { user } = useAuth();
-  const [payingInvoice, setPayingInvoice] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { cases, invoices, updateInvoice } = useDataStore();
 
   if (!user) return null;
 
-  const myCases = getCasesByClient(user.id);
-  const allInvoices = myCases.flatMap(c => getInvoicesByCase(c.caseId));
+  const myCases = getCasesByClient(user.id, cases);
+  const allInvoices = myCases.flatMap(c => getInvoicesByCase(c.caseId, invoices));
   
   const pendingInvoices = allInvoices.filter(i => i.status === 'pending');
   const paidInvoices = allInvoices.filter(i => i.status === 'paid');
   const totalPaid = paidInvoices.reduce((sum, i) => sum + i.amount, 0);
   const totalPending = pendingInvoices.reduce((sum, i) => sum + i.amount, 0);
 
-  const handlePayNow = async (invoiceId: string) => {
-    setPayingInvoice(invoiceId);
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setPayingInvoice(null);
-    // In real app, would process payment and update invoice status
-    alert('Payment simulation complete! In production, this would process the actual payment.');
+  const handlePayNow = (invoiceId: string) => {
+    navigate(`/client/payment-gateway?invoice=${invoiceId}`);
+  };
+
+  const handleMarkPaid = (invoiceId: string) => {
+    updateInvoice(invoiceId, {
+      status: 'paid',
+      paidAt: new Date().toISOString().split('T')[0],
+    });
   };
 
   return (
@@ -97,20 +102,9 @@ const ClientPayments: React.FC = () => {
                     </p>
                     <button
                       onClick={() => handlePayNow(inv.invoiceId)}
-                      disabled={payingInvoice === inv.invoiceId}
                       className="btn-primary whitespace-nowrap"
                     >
-                      {payingInvoice === inv.invoiceId ? (
-                        <span className="flex items-center gap-2">
-                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                          </svg>
-                          Processing...
-                        </span>
-                      ) : (
-                        'Pay Now'
-                      )}
+                      Pay Now
                     </button>
                   </div>
                 </div>

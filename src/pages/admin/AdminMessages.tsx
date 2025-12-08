@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Search, Send, User, Clock } from 'lucide-react';
-import { messages, users, getUserById } from '@/lib/mockData';
+import { useDataStore } from '@/contexts/DataStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const AdminMessages: React.FC = () => {
   const { user } = useAuth();
+  const { messages, users, addMessage, markMessageRead } = useDataStore();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,11 +24,11 @@ const AdminMessages: React.FC = () => {
     });
     
     return Array.from(conversationUserIds).map(id => {
-      const conversationUser = getUserById(id);
+      const conversationUser = users.find(u => u.id === id);
       const lastMessage = userMessages
         .filter(m => m.senderId === id || m.receiverId === id)
         .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime())[0];
-      const unread = userMessages.filter(m => m.senderId === id && !m.read).length;
+      const unread = userMessages.filter(m => m.senderId === id && !m.read && m.receiverId === user.id).length;
       
       return {
         user: conversationUser,
@@ -50,13 +51,25 @@ const AdminMessages: React.FC = () => {
         .sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime())
     : [];
 
-  const selectedUser = selectedUserId ? getUserById(selectedUserId) : null;
+  const selectedUser = selectedUserId ? users.find(u => u.id === selectedUserId) : null;
 
   const handleSend = () => {
-    if (!newMessage.trim() || !selectedUserId) return;
-    // In real app, would send message to backend
-    console.log('Sending:', newMessage, 'to:', selectedUserId);
+    if (!newMessage.trim() || !selectedUserId || !user) return;
+    
+    addMessage({
+      senderId: user.id,
+      receiverId: selectedUserId,
+      text: newMessage,
+    });
+    
     setNewMessage('');
+    
+    // Mark messages as read when sending
+    if (selectedUserId) {
+      messages
+        .filter(m => m.senderId === selectedUserId && m.receiverId === user.id && !m.read)
+        .forEach(m => markMessageRead(m.msgId));
+    }
   };
 
   return (

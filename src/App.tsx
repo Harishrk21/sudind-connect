@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { DataStoreProvider } from "@/contexts/DataStore";
 
 // Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -19,7 +20,10 @@ import AdminCases from "@/pages/admin/AdminCases";
 import AdminCaseDetail from "@/pages/admin/AdminCaseDetail";
 import AdminClients from "@/pages/admin/AdminClients";
 import AdminAgents from "@/pages/admin/AdminAgents";
+import AdminContracts from "@/pages/admin/AdminContracts";
 import AdminFinancials from "@/pages/admin/AdminFinancials";
+import AdminAIProcessing from "@/pages/admin/AdminAIProcessing";
+import AdminIntegrations from "@/pages/admin/AdminIntegrations";
 import AdminReports from "@/pages/admin/AdminReports";
 import AdminMessages from "@/pages/admin/AdminMessages";
 
@@ -27,11 +31,15 @@ import AdminMessages from "@/pages/admin/AdminMessages";
 import AgentDashboard from "@/pages/agent/AgentDashboard";
 import AgentCases from "@/pages/agent/AgentCases";
 import AgentUpload from "@/pages/agent/AgentUpload";
+import AgentCostEstimate from "@/pages/agent/AgentCostEstimate";
 
 // Client pages
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientCases from "@/pages/client/ClientCases";
 import ClientPayments from "@/pages/client/ClientPayments";
+import ClientPaymentGateway from "@/pages/client/ClientPaymentGateway";
+import ClientUpload from "@/pages/client/ClientUpload";
+import ClientChat from "@/pages/client/ClientChat";
 
 const queryClient = new QueryClient();
 
@@ -88,7 +96,11 @@ const AppRoutes = () => {
         <Route path="clients/:clientId" element={<div>Client Profile</div>} />
         <Route path="agents" element={<AdminAgents />} />
         <Route path="agents/:agentId" element={<div>Agent Profile</div>} />
+        <Route path="contracts" element={<AdminContracts />} />
+        <Route path="contracts/:contractId" element={<div>Contract Details</div>} />
         <Route path="financials" element={<AdminFinancials />} />
+        <Route path="ai-processing" element={<AdminAIProcessing />} />
+        <Route path="integrations" element={<AdminIntegrations />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="messages" element={<AdminMessages />} />
         <Route path="settings" element={<Settings />} />
@@ -104,6 +116,7 @@ const AppRoutes = () => {
         <Route path="cases" element={<AgentCases />} />
         <Route path="cases/:caseId" element={<AdminCaseDetail />} />
         <Route path="upload" element={<AgentUpload />} />
+        <Route path="cost-estimate" element={<AgentCostEstimate />} />
         <Route path="messages" element={<AdminMessages />} />
         <Route path="settings" element={<Settings />} />
       </Route>
@@ -117,8 +130,10 @@ const AppRoutes = () => {
         <Route index element={<ClientDashboard />} />
         <Route path="cases" element={<ClientCases />} />
         <Route path="cases/:caseId" element={<AdminCaseDetail />} />
-        <Route path="upload" element={<AgentUpload />} />
+        <Route path="upload" element={<ClientUpload />} />
         <Route path="payments" element={<ClientPayments />} />
+        <Route path="payment-gateway" element={<ClientPaymentGateway />} />
+        <Route path="chat" element={<ClientChat />} />
         <Route path="messages" element={<AdminMessages />} />
         <Route path="settings" element={<Settings />} />
       </Route>
@@ -136,7 +151,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <DataStoreProvider>
+            <AppRoutes />
+          </DataStoreProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

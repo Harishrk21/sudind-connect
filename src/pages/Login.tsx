@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDataStore } from '@/contexts/DataStore';
 import { Building2, Mail, Lock, Eye, EyeOff, AlertCircle, Users, UserCheck, User } from 'lucide-react';
-import { users, UserRole } from '@/lib/mockData';
+import { users as staticUsers, UserRole } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
 
 const Login: React.FC = () => {
@@ -12,7 +13,11 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { users: dataStoreUsers } = useDataStore();
   const navigate = useNavigate();
+  
+  // Combine static and dynamic users
+  const allUsers = [...staticUsers, ...dataStoreUsers.filter(du => !staticUsers.find(su => su.id === du.id))];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +27,7 @@ const Login: React.FC = () => {
     try {
       const success = await login(email, password);
       if (success) {
-        const user = users.find(u => u.email === email);
+        const user = allUsers.find(u => u.email === email);
         if (user) {
           navigate(`/${user.role}`);
         }

@@ -15,8 +15,12 @@ import {
   Bell,
   CreditCard,
   X,
+  Brain,
+  Building,
+  GraduationCap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Logo from '@/components/ui/Logo';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -32,7 +36,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { to: '/admin/clients', icon: Users, label: 'Clients' },
     { to: '/admin/agents', icon: UserCheck, label: 'Agents' },
     { to: '/admin/cases', icon: FolderKanban, label: 'Cases' },
+    { to: '/admin/contracts', icon: FileText, label: 'Contracts' },
     { to: '/admin/financials', icon: CreditCard, label: 'Financials' },
+    { to: '/admin/ai-processing', icon: Brain, label: 'AI Processing' },
+    { to: '/admin/integrations', icon: Building, label: 'Integrations' },
     { to: '/admin/reports', icon: FileText, label: 'Reports' },
     { to: '/admin/messages', icon: MessageSquare, label: 'Messages' },
   ];
@@ -41,6 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { to: '/agent', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/agent/cases', icon: FolderKanban, label: 'My Cases' },
     { to: '/agent/upload', icon: Upload, label: 'Upload Documents' },
+    { to: '/agent/cost-estimate', icon: CreditCard, label: 'Cost Estimates' },
     { to: '/agent/messages', icon: MessageSquare, label: 'Messages' },
   ];
 
@@ -50,6 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { to: '/client/upload', icon: Upload, label: 'Upload Documents' },
     { to: '/client/payments', icon: CreditCard, label: 'Payments' },
     { to: '/client/messages', icon: MessageSquare, label: 'Messages' },
+    { to: '/client/chat', icon: MessageSquare, label: 'Live Support' },
   ];
 
   const getLinks = () => {
@@ -99,15 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-sidebar-primary flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-sidebar-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-semibold text-sidebar-foreground text-sm">SudInd Portal</h1>
-              <p className="text-xs text-sidebar-foreground/60">{getRoleLabel()}</p>
-            </div>
-          </div>
+          <Logo size="sm" showText={true} className="text-sidebar-foreground" />
           <button
             onClick={onClose}
             className="lg:hidden p-1 rounded text-sidebar-foreground/60 hover:text-sidebar-foreground"

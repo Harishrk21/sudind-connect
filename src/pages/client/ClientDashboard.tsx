@@ -3,25 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { FolderKanban, Clock, CheckCircle2, CreditCard, ArrowRight, Stethoscope, GraduationCap, MessageSquare, Upload, Bell } from 'lucide-react';
 import KPICard from '@/components/ui/KPICard';
 import StatusBadge from '@/components/ui/StatusBadge';
+import CustomerAI from '@/components/ui/CustomerAI';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDataStore } from '@/contexts/DataStore';
 import { getCasesByClient, getInvoicesByCase, getNotificationsByUser, Case } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
 
 const ClientDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { cases, invoices, notifications: allNotifications } = useDataStore();
 
   if (!user) return null;
 
-  const myCases = getCasesByClient(user.id);
+  const myCases = getCasesByClient(user.id, cases);
   const activeCases = myCases.filter(c => !['completed', 'closed'].includes(c.status));
   const completedCases = myCases.filter(c => ['completed', 'closed'].includes(c.status));
   
-  const allInvoices = myCases.flatMap(c => getInvoicesByCase(c.caseId));
+  const allInvoices = myCases.flatMap(c => getInvoicesByCase(c.caseId, invoices));
   const pendingPayments = allInvoices.filter(i => i.status === 'pending');
   const totalPending = pendingPayments.reduce((sum, i) => sum + i.amount, 0);
   
-  const notifications = getNotificationsByUser(user.id).filter(n => !n.read);
+  const notifications = getNotificationsByUser(user.id, allNotifications).filter(n => !n.read);
 
   const getClientTypeLabel = () => {
     switch (user.clientType) {
@@ -217,6 +220,11 @@ const ClientDashboard: React.FC = () => {
             <p className="text-sm text-muted-foreground">Contact support</p>
           </div>
         </button>
+      </div>
+
+      {/* Customer Relationship AI */}
+      <div className="bg-card rounded-xl border border-border p-6">
+        <CustomerAI />
       </div>
     </div>
   );

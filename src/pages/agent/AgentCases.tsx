@@ -4,25 +4,27 @@ import { Search, Stethoscope, GraduationCap, ArrowRight } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
-import { getCasesByAgent, getUserById, Case, CaseStatus, CaseType } from '@/lib/mockData';
+import { useDataStore } from '@/contexts/DataStore';
+import { getCasesByAgent, Case, CaseStatus, CaseType } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
 
 const AgentCases: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { cases, users } = useDataStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<CaseType | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<CaseStatus | 'all'>('all');
 
   if (!user) return null;
 
-  const myCases = getCasesByAgent(user.id);
+  const myCases = getCasesByAgent(user.id, cases);
 
   const filteredCases = myCases.filter((c) => {
     const matchesSearch =
       c.caseId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getUserById(c.clientId)?.name.toLowerCase().includes(searchTerm.toLowerCase());
+      users.find(u => u.id === c.clientId)?.name.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesType = typeFilter === 'all' || c.type === typeFilter;
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
@@ -52,7 +54,7 @@ const AgentCases: React.FC = () => {
       key: 'client',
       header: 'Client',
       render: (item: Case) => {
-        const client = getUserById(item.clientId);
+        const client = users.find(u => u.id === item.clientId);
         return (
           <div>
             <p className="text-foreground">{client?.name}</p>

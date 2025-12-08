@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Upload, FileText, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDataStore } from '@/contexts/DataStore';
 import { getCasesByAgent, DocumentType } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
 
 const AgentUpload: React.FC = () => {
   const { user } = useAuth();
+  const { cases, addDocument, addNotification } = useDataStore();
   const [selectedCase, setSelectedCase] = useState('');
   const [documentType, setDocumentType] = useState<DocumentType>('medical_report');
   const [files, setFiles] = useState<File[]>([]);
@@ -14,7 +16,7 @@ const AgentUpload: React.FC = () => {
 
   if (!user) return null;
 
-  const myCases = getCasesByAgent(user.id);
+  const myCases = getCasesByAgent(user.id, cases);
 
   const documentTypes: { value: DocumentType; label: string }[] = [
     { value: 'medical_report', label: 'Medical Report' },
@@ -49,6 +51,26 @@ const AgentUpload: React.FC = () => {
     setUploading(true);
     // Simulate upload
     await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Add documents to store
+    files.forEach((file) => {
+      addDocument({
+        caseId: selectedCase,
+        uploaderId: user.id,
+        uploaderRole: 'agent',
+        type: documentType,
+        filename: file.name,
+        size: formatFileSize(file.size),
+      });
+    });
+
+    addNotification({
+      userId: 1, // Admin
+      title: 'Documents Uploaded',
+      message: `${user.name} uploaded ${files.length} document(s) for case ${selectedCase}`,
+      type: 'info',
+    });
+
     setUploading(false);
     setUploadSuccess(true);
     setFiles([]);

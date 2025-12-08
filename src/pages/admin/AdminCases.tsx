@@ -3,14 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Plus, Stethoscope, GraduationCap, ArrowRight } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { cases, getUserById, Case, CaseStatus, CaseType } from '@/lib/mockData';
+import { useDataStore } from '@/contexts/DataStore';
+import { getUserById, Case, CaseStatus, CaseType } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
+import AddCaseForm from '@/components/forms/AddCaseForm';
 
 const AdminCases: React.FC = () => {
   const navigate = useNavigate();
+  const { cases, users } = useDataStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<CaseType | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<CaseStatus | 'all'>('all');
+  const [addCaseOpen, setAddCaseOpen] = useState(false);
 
   const filteredCases = cases.filter((c) => {
     const matchesSearch =
@@ -20,7 +24,7 @@ const AdminCases: React.FC = () => {
     
     const matchesType = typeFilter === 'all' || c.type === typeFilter;
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
-    
+
     return matchesSearch && matchesType && matchesStatus;
   });
 
@@ -108,10 +112,21 @@ const AdminCases: React.FC = () => {
     },
   ];
 
-  const statusOptions: (CaseStatus | 'all')[] = ['all', 'new', 'review', 'pending', 'approved', 'under_treatment', 'under_admission', 'completed', 'closed'];
+  const statusOptions: (CaseStatus | 'all')[] = [
+    'all',
+    'new',
+    'review',
+    'pending',
+    'approved',
+    'under_treatment',
+    'under_admission',
+    'completed',
+    'closed'
+  ];
 
   return (
     <div className="space-y-6">
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -119,16 +134,21 @@ const AdminCases: React.FC = () => {
             {filteredCases.length} {filteredCases.length === 1 ? 'case' : 'cases'} found
           </p>
         </div>
-        <button className="btn-primary">
+
+        <button className="btn-primary" onClick={() => setAddCaseOpen(true)}>
           <Plus className="w-4 h-4" />
           New Case
         </button>
       </div>
 
+      {/* Add Case Form */}
+      <AddCaseForm open={addCaseOpen} onOpenChange={setAddCaseOpen} />
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+
           <input
             type="text"
             placeholder="Search by case ID, title, or client..."
@@ -137,6 +157,7 @@ const AdminCases: React.FC = () => {
             className="input-field pl-10"
           />
         </div>
+
         <div className="flex gap-3">
           <select
             value={typeFilter}
@@ -147,6 +168,7 @@ const AdminCases: React.FC = () => {
             <option value="medical">Medical</option>
             <option value="academic">Academic</option>
           </select>
+
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as CaseStatus | 'all')}
@@ -161,7 +183,7 @@ const AdminCases: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats bar */}
+      {/* Stats */}
       <div className="flex flex-wrap gap-2">
         {[
           { label: 'Medical', count: cases.filter(c => c.type === 'medical').length, icon: Stethoscope, color: 'text-info' },
@@ -175,7 +197,13 @@ const AdminCases: React.FC = () => {
                 ? 'border-primary bg-primary/5'
                 : 'border-border hover:border-primary/30'
             )}
-            onClick={() => setTypeFilter(typeFilter === stat.label.toLowerCase() ? 'all' : stat.label.toLowerCase() as CaseType)}
+            onClick={() =>
+              setTypeFilter(
+                typeFilter === stat.label.toLowerCase()
+                  ? 'all'
+                  : (stat.label.toLowerCase() as CaseType)
+              )
+            }
           >
             <stat.icon className={cn('w-4 h-4', stat.color)} />
             <span className="text-sm font-medium">{stat.label}</span>

@@ -15,8 +15,11 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  Forward,
+  Upload,
 } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { useDataStore } from '@/contexts/DataStore';
 import { 
   getCaseById, 
   getUserById, 
@@ -26,17 +29,20 @@ import {
   getStatusLabel,
 } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
+import UpdateCaseStatusForm from '@/components/forms/UpdateCaseStatusForm';
 
 const AdminCaseDetail: React.FC = () => {
   const { caseId } = useParams<{ caseId: string }>();
   const navigate = useNavigate();
+  const { cases, users, documents, invoices, updateCase } = useDataStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'invoices' | 'timeline'>('overview');
+  const [updateStatusOpen, setUpdateStatusOpen] = useState(false);
 
-  const caseData = caseId ? getCaseById(caseId) : undefined;
-  const client = caseData ? getUserById(caseData.clientId) : undefined;
-  const agent = caseData ? getUserById(caseData.agentId) : undefined;
-  const documents = caseId ? getDocumentsByCase(caseId) : [];
-  const invoices = caseId ? getInvoicesByCase(caseId) : [];
+  const caseData = caseId ? cases.find(c => c.caseId === caseId) : undefined;
+  const client = caseData ? users.find(u => u.id === caseData.clientId) : undefined;
+  const agent = caseData ? users.find(u => u.id === caseData.agentId) : undefined;
+  const caseDocuments = caseId ? documents.filter(d => d.caseId === caseId) : [];
+  const caseInvoices = caseId ? invoices.filter(i => i.caseId === caseId) : [];
 
   if (!caseData) {
     return (
@@ -96,7 +102,7 @@ const AdminCaseDetail: React.FC = () => {
             <Send className="w-4 h-4" />
             Message
           </button>
-          <button className="btn-primary">Update Status</button>
+          <button className="btn-primary" onClick={() => setUpdateStatusOpen(true)}>Update Status</button>
         </div>
       </div>
 
@@ -193,11 +199,11 @@ const AdminCaseDetail: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Documents</span>
-                <span className="text-foreground">{documents.length} files</span>
+                <span className="text-foreground">{caseDocuments.length} files</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Invoices</span>
-                <span className="text-foreground">{invoices.length} total</span>
+                <span className="text-foreground">{caseInvoices.length} total</span>
               </div>
             </div>
           </div>
@@ -205,32 +211,99 @@ const AdminCaseDetail: React.FC = () => {
       )}
 
       {activeTab === 'documents' && (
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          {documents.length === 0 ? (
-            <div className="p-8 text-center">
-              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No documents uploaded yet</p>
+        <div className="space-y-4">
+          {/* Action buttons */}
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-foreground">Documents</h3>
+            <div className="flex gap-2">
+              <button className="btn-secondary">
+                <Upload className="w-4 h-4" />
+                Upload Document
+              </button>
+              {caseDocuments.length > 0 && (
+                <button className="btn-primary" onClick={() => {
+                  // Forward documents logic
+                  if (caseData) {
+                    updateCase(caseData.caseId, { status: 'approved' });
+                  }
+                }}>
+                  <Forward className="w-4 h-4" />
+                  Forward to Institution
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {documents.map((doc) => (
-                <div key={doc.docId} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <FileText className="w-5 h-5 text-muted-foreground" />
+          </div>
+
+          {/* Documents list */}
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            {caseDocuments.length === 0 ? (
+              <div className="p-8 text-center">
+                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No documents uploaded yet</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Upload documents to forward them to {caseData.type === 'medical' ? 'hospitals' : 'universities'} in India
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {caseDocuments.map((doc) => (
+                  <div key={doc.docId} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="p-2 rounded-lg bg-muted">
+                        <FileText className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-foreground">{doc.filename}</p>
+                          {doc.uploaderRole === 'client' && (
+                            <span className="text-xs bg-info/15 text-info px-2 py-0.5 rounded">From Client</span>
+                          )}
+                          {doc.uploaderRole === 'agent' && (
+                            <span className="text-xs bg-accent/15 text-accent px-2 py-0.5 rounded">From Agent</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {doc.type.replace('_', ' ')} • {doc.size} • Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
+                        </p>
+                        {(caseData?.hospital || caseData?.university) ? (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Forwarded to: {caseData.hospital || caseData.university}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-warning mt-1">Not yet forwarded to institution</p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">{doc.filename}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {doc.type.replace('_', ' ')} • {doc.size} • Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        className="p-2 rounded-lg hover:bg-muted transition-colors"
+                        title="Forward to Institution"
+                      >
+                        <Forward className="w-4 h-4 text-primary" />
+                      </button>
+                      <button className="p-2 rounded-lg hover:bg-muted transition-colors">
+                        <Download className="w-5 h-5 text-muted-foreground" />
+                      </button>
                     </div>
                   </div>
-                  <button className="p-2 rounded-lg hover:bg-muted transition-colors">
-                    <Download className="w-5 h-5 text-muted-foreground" />
-                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Forwarding instructions */}
+          {documents.length > 0 && (
+            <div className="bg-accent/10 border border-accent/20 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <Forward className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Document Forwarding</p>
+                  <p className="text-sm text-muted-foreground">
+                    Documents can be forwarded to {caseData?.type === 'medical' ? 'hospitals' : 'universities'} in India through our secure integration system. 
+                    Select individual documents or use "Forward to Institution" to send all documents at once.
+                  </p>
                 </div>
-              ))}
+              </div>
             </div>
           )}
         </div>
@@ -238,14 +311,14 @@ const AdminCaseDetail: React.FC = () => {
 
       {activeTab === 'invoices' && (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
-          {invoices.length === 0 ? (
+          {caseInvoices.length === 0 ? (
             <div className="p-8 text-center">
               <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">No invoices generated yet</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {invoices.map((inv) => (
+              {caseInvoices.map((inv) => (
                 <div key={inv.invoiceId} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className={cn(
@@ -278,7 +351,7 @@ const AdminCaseDetail: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'timeline' && (
+      {activeTab === 'timeline' && caseData && (
         <div className="bg-card rounded-xl border border-border p-6">
           <div className="relative">
             {statusTimeline.map((step, index) => (
@@ -318,6 +391,15 @@ const AdminCaseDetail: React.FC = () => {
             ))}
           </div>
         </div>
+      )}
+
+      {caseData && (
+        <UpdateCaseStatusForm
+          open={updateStatusOpen}
+          onOpenChange={setUpdateStatusOpen}
+          caseId={caseData.caseId}
+          currentStatus={caseData.status}
+        />
       )}
     </div>
   );
