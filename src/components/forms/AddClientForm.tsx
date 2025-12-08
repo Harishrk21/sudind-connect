@@ -96,6 +96,14 @@ const AddClientForm: React.FC<AddClientFormProps> = ({ open, onOpenChange }) => 
         type: 'success',
       });
 
+      // Send welcome email
+      try {
+        const { EmailWorkflowService } = await import('@/lib/notificationService');
+        await EmailWorkflowService.sendWelcomeEmail(formData.email, formData.name);
+      } catch (error) {
+        console.error('Failed to send welcome email:', error);
+      }
+
       setSuccess(true);
       
       // Reset form

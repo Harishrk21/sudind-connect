@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Stethoscope, GraduationCap, ArrowRight, FolderKanban, Plus } from 'lucide-react';
+import { Stethoscope, GraduationCap, ArrowRight, FolderKanban, Plus, TrendingUp } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDataStore } from '@/contexts/DataStore';
-import { getCasesByClient } from '@/lib/mockData';
+import { getCasesByClient, CaseStatus } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
 import ClientCreateCaseForm from '@/components/forms/ClientCreateCaseForm';
 
@@ -14,9 +14,22 @@ const ClientCases: React.FC = () => {
   const { cases } = useDataStore();
   const [createCaseOpen, setCreateCaseOpen] = useState(false);
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-muted-foreground">Please log in to view your cases.</p>
+      </div>
+    );
+  }
 
   const myCases = getCasesByClient(user.id, cases);
+
+  const getCaseProgress = (caseStatus: CaseStatus) => {
+    const statusOrder: CaseStatus[] = ['new', 'review', 'pending', 'approved', 'under_treatment', 'under_admission', 'completed', 'closed'];
+    const currentIndex = statusOrder.indexOf(caseStatus);
+    const totalSteps = statusOrder.length;
+    return Math.round(((currentIndex + 1) / totalSteps) * 100);
+  };
 
   return (
     <div className="space-y-6">
@@ -28,7 +41,15 @@ const ClientCases: React.FC = () => {
             {myCases.length} {myCases.length === 1 ? 'case' : 'cases'} in your account
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setCreateCaseOpen(true)}>
+        <button 
+          type="button"
+          className="btn-primary" 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setCreateCaseOpen(true);
+          }}
+        >
           <Plus className="w-4 h-4" />
           Create New Case
         </button>
@@ -43,7 +64,15 @@ const ClientCases: React.FC = () => {
           <p className="text-muted-foreground text-center max-w-md mb-4">
             You don't have any active cases. Create a new case to start your medical treatment or academic admission journey.
           </p>
-          <button className="btn-primary" onClick={() => setCreateCaseOpen(true)}>
+          <button 
+            type="button"
+            className="btn-primary" 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setCreateCaseOpen(true);
+            }}
+          >
             <Plus className="w-4 h-4" />
             Create Your First Case
           </button>
@@ -85,6 +114,20 @@ const ClientCases: React.FC = () => {
             <p className="text-muted-foreground mb-4">
               {c.hospital || c.university}
             </p>
+
+            {/* Progress Bar */}
+            <div className="py-3 border-t border-border">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground">Progress</span>
+                <span className="text-xs font-medium text-primary">{getCaseProgress(c.status)}%</span>
+              </div>
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500"
+                  style={{ width: `${getCaseProgress(c.status)}%` }}
+                />
+              </div>
+            </div>
 
             {/* Details */}
             <div className="grid grid-cols-2 gap-4 py-4 border-t border-border">

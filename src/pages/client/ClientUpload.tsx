@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Upload, FileText, X, CheckCircle2, Lock, Shield, FileCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDataStore } from '@/contexts/DataStore';
+import { EmailWorkflowService } from '@/lib/notificationService';
 import { getCasesByClient, DocumentType } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
 
@@ -77,7 +78,7 @@ const ClientUpload: React.FC = () => {
     // Simulate upload progress
     newFiles.forEach((file) => {
       let progress = 0;
-      const interval = setInterval(() => {
+      const interval = setInterval(async () => {
         progress += 10;
         setUploadedFiles((prev) =>
           prev.map((f) =>
@@ -104,6 +105,18 @@ const ClientUpload: React.FC = () => {
               message: `${user.name} uploaded ${file.file.name}`,
               type: 'info',
             });
+
+            // Send document received confirmation email
+            if (user.email) {
+              try {
+                await EmailWorkflowService.sendDocumentReceivedConfirmation(
+                  user.email,
+                  file.file.name
+                );
+              } catch (error) {
+                console.error('Failed to send document confirmation email:', error);
+              }
+            }
           }
         }
       }, 200);

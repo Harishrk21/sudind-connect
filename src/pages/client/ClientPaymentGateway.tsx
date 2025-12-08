@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CreditCard, Smartphone, Building2, Lock, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDataStore } from '@/contexts/DataStore';
+import { EmailWorkflowService } from '@/lib/notificationService';
 import { getCasesByClient, getInvoicesByCase, Invoice } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
 
@@ -42,7 +43,7 @@ const ClientPaymentGateway: React.FC = () => {
     },
   ];
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!selectedInvoice) return;
     
     // Update invoice status
@@ -58,6 +59,19 @@ const ClientPaymentGateway: React.FC = () => {
       message: `Payment of $${selectedInvoice.amount} processed successfully`,
       type: 'success',
     });
+
+    // Send payment confirmation email
+    if (user.email) {
+      try {
+        await EmailWorkflowService.sendPaymentConfirmation(
+          user.email,
+          selectedInvoice.invoiceId,
+          selectedInvoice.amount
+        );
+      } catch (error) {
+        console.error('Failed to send payment confirmation email:', error);
+      }
+    }
 
     setPaymentStep('select');
     setSelectedInvoice(null);

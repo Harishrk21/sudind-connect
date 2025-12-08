@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Upload, FileText, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDataStore } from '@/contexts/DataStore';
+import { EmailWorkflowService } from '@/lib/notificationService';
 import { getCasesByAgent, DocumentType } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
 
@@ -70,6 +71,15 @@ const AgentUpload: React.FC = () => {
       message: `${user.name} uploaded ${files.length} document(s) for case ${selectedCase}`,
       type: 'info',
     });
+
+    // Send notification emails to admin and client
+    try {
+      const { EmailWorkflowService } = await import('@/lib/notificationService');
+      // In a real app, we would get the client email from the case
+      // For now, this is a placeholder
+    } catch (error) {
+      console.error('Failed to send notification emails:', error);
+    }
 
     setUploading(false);
     setUploadSuccess(true);

@@ -27,7 +27,7 @@ const ClientCreateCaseForm: React.FC<ClientCreateCaseFormProps> = ({ open, onOpe
     priority: 'medium' as 'low' | 'medium' | 'high',
     title: '',
     description: '',
-    agentId: '',
+    agentId: 'unassigned',
     adminNotes: '',
   });
 
@@ -40,6 +40,12 @@ const ClientCreateCaseForm: React.FC<ClientCreateCaseFormProps> = ({ open, onOpe
     setSuccess(false);
 
     try {
+      if (!user) {
+        setError('You must be logged in to create a case');
+        setLoading(false);
+        return;
+      }
+
       if (!formData.type || !formData.title) {
         setError('Please fill in all required fields');
         setLoading(false);
@@ -47,10 +53,12 @@ const ClientCreateCaseForm: React.FC<ClientCreateCaseFormProps> = ({ open, onOpe
       }
 
       // Auto-assign first available agent if none selected
-      const selectedAgentId = formData.agentId || (agents.length > 0 ? agents[0].id.toString() : '2');
+      const selectedAgentId = formData.agentId === 'unassigned' 
+        ? (agents.length > 0 ? agents[0].id.toString() : '2')
+        : formData.agentId;
 
       const newCase = addCase({
-        clientId: user?.id || 0,
+        clientId: user.id,
         agentId: parseInt(selectedAgentId),
         type: formData.type as CaseType,
         status: 'new',
@@ -59,7 +67,7 @@ const ClientCreateCaseForm: React.FC<ClientCreateCaseFormProps> = ({ open, onOpe
       });
 
       addNotification({
-        userId: user?.id || 0,
+        userId: user.id,
         title: 'Case Created Successfully',
         message: `Your case ${newCase.caseId} has been submitted and is under review`,
         type: 'success',
@@ -68,7 +76,7 @@ const ClientCreateCaseForm: React.FC<ClientCreateCaseFormProps> = ({ open, onOpe
       addNotification({
         userId: 1, // Admin
         title: 'New Case Created',
-        message: `${user?.name} created a new ${formData.type} case: ${newCase.caseId}`,
+        message: `${user.name} created a new ${formData.type} case: ${newCase.caseId}`,
         type: 'info',
       });
 
@@ -78,7 +86,7 @@ const ClientCreateCaseForm: React.FC<ClientCreateCaseFormProps> = ({ open, onOpe
         priority: 'medium',
         title: '',
         description: '',
-        agentId: '',
+        agentId: 'unassigned',
         adminNotes: '',
       });
 
@@ -95,7 +103,7 @@ const ClientCreateCaseForm: React.FC<ClientCreateCaseFormProps> = ({ open, onOpe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-[100]">
         <DialogHeader>
           <DialogTitle>Create New Case</DialogTitle>
         </DialogHeader>
@@ -192,11 +200,11 @@ const ClientCreateCaseForm: React.FC<ClientCreateCaseFormProps> = ({ open, onOpe
               value={formData.agentId}
               onValueChange={(value) => setFormData({ ...formData, agentId: value })}
             >
-              <SelectTrigger className={cn(formData.agentId === '' && 'border-primary')}>
+              <SelectTrigger className={cn(formData.agentId === 'unassigned' && 'border-primary')}>
                 <SelectValue placeholder="Unassigned" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {agents.map((agent) => (
                   <SelectItem key={agent.id} value={agent.id.toString()}>
                     {agent.name} - {agent.country}
@@ -204,7 +212,7 @@ const ClientCreateCaseForm: React.FC<ClientCreateCaseFormProps> = ({ open, onOpe
                 ))}
               </SelectContent>
             </Select>
-            {formData.agentId === '' && (
+            {formData.agentId === 'unassigned' && (
               <p className="text-xs text-muted-foreground mt-1">
                 If unassigned, an agent will be automatically assigned by the admin
               </p>

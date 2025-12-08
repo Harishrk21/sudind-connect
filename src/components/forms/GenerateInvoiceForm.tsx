@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDataStore } from '@/contexts/DataStore';
+import { getUserById } from '@/lib/mockData';
+import { EmailWorkflowService } from '@/lib/notificationService';
 import { AlertCircle } from 'lucide-react';
 
 interface GenerateInvoiceFormProps {
@@ -66,12 +68,27 @@ const GenerateInvoiceForm: React.FC<GenerateInvoiceFormProps> = ({ open, onOpenC
         dueDate: formData.dueDate,
       });
 
+      const client = getUserById(parseInt(formData.clientId));
+
       addNotification({
         userId: parseInt(formData.clientId),
         title: 'New Invoice Generated',
         message: `Invoice ${newInvoice.invoiceId} for ${formData.amount} ${formData.currency}`,
         type: 'info',
       });
+
+      // Send email notification to client
+      if (client?.email) {
+        try {
+          await EmailWorkflowService.sendInvoiceNotification(
+            client.email,
+            newInvoice.invoiceId,
+            parseFloat(formData.amount)
+          );
+        } catch (error) {
+          console.error('Failed to send invoice email:', error);
+        }
+      }
 
       setSuccess(true);
       

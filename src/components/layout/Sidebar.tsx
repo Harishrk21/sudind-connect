@@ -18,6 +18,7 @@ import {
   Brain,
   Building,
   GraduationCap,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Logo from '@/components/ui/Logo';
@@ -41,6 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { to: '/admin/ai-processing', icon: Brain, label: 'AI Processing' },
     { to: '/admin/integrations', icon: Building, label: 'Integrations' },
     { to: '/admin/reports', icon: FileText, label: 'Reports' },
+    { to: '/admin/audit-log', icon: Shield, label: 'Audit Log' },
     { to: '/admin/messages', icon: MessageSquare, label: 'Messages' },
   ];
 
@@ -102,12 +104,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-50 h-full w-64 bg-sidebar transform transition-transform duration-300 ease-in-out lg:translate-x-0',
+          'fixed top-0 left-0 z-50 h-screen w-64 bg-sidebar transform transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
+        <div className="flex items-center justify-between p-4 border-b border-sidebar-border flex-shrink-0">
           <Logo size="sm" showText={true} className="text-sidebar-foreground" />
           <button
             onClick={onClose}
@@ -118,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* User info */}
-        <div className="p-4 border-b border-sidebar-border">
+        <div className="p-4 border-b border-sidebar-border flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-accent-foreground font-medium">
               {user?.name.charAt(0)}
@@ -130,8 +132,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {/* Navigation - Scrollable */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden min-h-0">
           {links.map((link) => (
             <NavLink
               key={link.to}
@@ -149,7 +151,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </nav>
 
         {/* Footer */}
-        <div className="p-3 border-t border-sidebar-border space-y-1">
+        <div className="p-3 border-t border-sidebar-border space-y-1 flex-shrink-0">
           <NavLink
             to={`/${user?.role}/settings`}
             className={({ isActive }) => cn('nav-link', isActive && 'active')}

@@ -30,6 +30,7 @@ import {
 } from '@/lib/mockData';
 import { cn, downloadDemoFile, DocumentData } from '@/lib/utils';
 import UpdateCaseStatusForm from '@/components/forms/UpdateCaseStatusForm';
+import CaseTimeline from '@/components/ui/CaseTimeline';
 
 const AdminCaseDetail: React.FC = () => {
   const { caseId } = useParams<{ caseId: string }>();
@@ -57,14 +58,6 @@ const AdminCaseDetail: React.FC = () => {
     );
   }
 
-  const statusTimeline: { status: CaseStatus; date?: string; completed: boolean }[] = [
-    { status: 'new', date: caseData.createdAt, completed: true },
-    { status: 'review', completed: ['review', 'pending', 'approved', 'under_treatment', 'under_admission', 'completed', 'closed'].includes(caseData.status) },
-    { status: 'pending', completed: ['pending', 'approved', 'under_treatment', 'under_admission', 'completed', 'closed'].includes(caseData.status) },
-    { status: 'approved', completed: ['approved', 'under_treatment', 'under_admission', 'completed', 'closed'].includes(caseData.status) },
-    { status: caseData.type === 'medical' ? 'under_treatment' : 'under_admission', completed: ['under_treatment', 'under_admission', 'completed', 'closed'].includes(caseData.status) },
-    { status: 'completed', date: caseData.status === 'completed' ? caseData.updatedAt : undefined, completed: ['completed', 'closed'].includes(caseData.status) },
-  ];
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -222,13 +215,18 @@ const AdminCaseDetail: React.FC = () => {
               </button>
               {caseDocuments.length > 0 && (
                 <button className="btn-primary" onClick={() => {
-                  // Forward documents logic
-                  if (caseData) {
+                  // Forward all documents logic
+                  if (caseData && (caseData.hospital || caseData.university)) {
+                    const institution = caseData.hospital || caseData.university;
                     updateCase(caseData.caseId, { status: 'approved' });
+                    // In a real app, this would trigger an API call to forward all documents
+                    alert(`All ${caseDocuments.length} document(s) forwarded to ${institution}`);
+                  } else {
+                    alert('Please assign a hospital/university to this case first');
                   }
                 }}>
                   <Forward className="w-4 h-4" />
-                  Forward to Institution
+                  Forward All to Institution
                 </button>
               )}
             </div>
@@ -265,6 +263,17 @@ const AdminCaseDetail: React.FC = () => {
                         <p className="text-sm text-muted-foreground">
                           {doc.type.replace('_', ' ')} • {doc.size} • Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
                         </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs bg-success/15 text-success px-2 py-0.5 rounded flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                            </svg>
+                            Encrypted
+                          </span>
+                          <span className="text-xs bg-info/15 text-info px-2 py-0.5 rounded">
+                            Cloud Stored
+                          </span>
+                        </div>
                         {(caseData?.hospital || caseData?.university) ? (
                           <p className="text-xs text-muted-foreground mt-1">
                             Forwarded to: {caseData.hospital || caseData.university}
@@ -278,6 +287,20 @@ const AdminCaseDetail: React.FC = () => {
                       <button 
                         className="p-2 rounded-lg hover:bg-muted transition-colors"
                         title="Forward to Institution"
+                        onClick={() => {
+                          if (caseData && (caseData.hospital || caseData.university)) {
+                            // Document forwarding logic
+                            const institution = caseData.hospital || caseData.university;
+                            updateCase(caseData.caseId, { 
+                              status: caseData.status === 'approved' ? caseData.status : 'approved' 
+                            });
+                            // Add notification
+                            // In a real app, this would trigger an API call to forward documents
+                            alert(`Document "${doc.filename}" forwarded to ${institution}`);
+                          } else {
+                            alert('Please assign a hospital/university to this case first');
+                          }
+                        }}
                       >
                         <Forward className="w-4 h-4 text-primary" />
                       </button>
@@ -366,45 +389,13 @@ const AdminCaseDetail: React.FC = () => {
       )}
 
       {activeTab === 'timeline' && caseData && (
-        <div className="bg-card rounded-xl border border-border p-6">
-          <div className="relative">
-            {statusTimeline.map((step, index) => (
-              <div key={step.status} className="flex gap-4 pb-6 last:pb-0">
-                <div className="flex flex-col items-center">
-                  <div className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center',
-                    step.completed ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'
-                  )}>
-                    {step.completed ? (
-                      <CheckCircle2 className="w-5 h-5" />
-                    ) : (
-                      <Clock className="w-5 h-5" />
-                    )}
-                  </div>
-                  {index < statusTimeline.length - 1 && (
-                    <div className={cn(
-                      'w-0.5 flex-1 mt-2',
-                      step.completed ? 'bg-success' : 'bg-muted'
-                    )} />
-                  )}
-                </div>
-                <div className="flex-1 pt-1">
-                  <p className={cn(
-                    'font-medium',
-                    step.completed ? 'text-foreground' : 'text-muted-foreground'
-                  )}>
-                    {getStatusLabel(step.status)}
-                  </p>
-                  {step.date && (
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(step.date).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <CaseTimeline
+          caseStatus={caseData.status}
+          caseType={caseData.type}
+          createdAt={caseData.createdAt}
+          updatedAt={caseData.updatedAt}
+          showProgress={true}
+        />
       )}
 
       {caseData && (

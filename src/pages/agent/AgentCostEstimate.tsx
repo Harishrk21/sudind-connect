@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { DollarSign, Plus, FileText, Calculator, Stethoscope, GraduationCap } from 'lucide-react';
+import { DollarSign, Plus, FileText, Calculator, Stethoscope, GraduationCap, Edit, Send, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getCasesByAgent, getCaseById, Case } from '@/lib/mockData';
+import { useDataStore } from '@/contexts/DataStore';
+import { getCasesByAgent, getCaseById, Case, getUserById } from '@/lib/mockData';
 import { cn } from '@/lib/utils';
+import { EmailWorkflowService } from '@/lib/notificationService';
 
 interface CostEstimate {
   id: number;
@@ -18,7 +20,14 @@ interface CostEstimate {
 
 const AgentCostEstimate: React.FC = () => {
   const { user } = useAuth();
+  const { users, cases, addNotification } = useDataStore();
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
+  const [editingEstimate, setEditingEstimate] = useState<CostEstimate | null>(null);
+  const [editForm, setEditForm] = useState({
+    baseCost: 0,
+    additionalFees: 0,
+    description: '',
+  });
   const [estimates, setEstimates] = useState<CostEstimate[]>([
     {
       id: 1,
@@ -66,6 +75,63 @@ const AgentCostEstimate: React.FC = () => {
     
     setEstimates([...estimates, newEstimate]);
     setSelectedCase(null);
+  };
+
+  const handleEdit = (estimate: CostEstimate) => {
+    setEditingEstimate(estimate);
+    setEditForm({
+      baseCost: estimate.baseCost,
+      additionalFees: estimate.additionalFees,
+      description: estimate.description,
+    });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingEstimate) return;
+    
+    const total = editForm.baseCost + editForm.additionalFees;
+    setEstimates(estimates.map(e => 
+      e.id === editingEstimate.id 
+        ? { ...e, ...editForm, total }
+        : e
+    ));
+    setEditingEstimate(null);
+    setEditForm({ baseCost: 0, additionalFees: 0, description: '' });
+  };
+
+  const handleSendToClient = async (estimate: CostEstimate) => {
+    const case_ = getCaseById(estimate.caseId);
+    if (!case_) return;
+
+    const client = getUserById(case_.clientId);
+    
+    // Update estimate status
+    setEstimates(estimates.map(e => 
+      e.id === estimate.id 
+        ? { ...e, status: 'sent' as const }
+        : e
+    ));
+
+    // Add notification
+    addNotification({
+      userId: case_.clientId,
+      title: 'New Cost Estimate Received',
+      message: `A cost estimate of $${estimate.total.toLocaleString()} has been sent for case ${estimate.caseId}`,
+      type: 'info',
+    });
+
+    // Send email notification to client
+    if (client?.email) {
+      try {
+        await EmailWorkflowService.sendInvoiceNotification(
+          client.email,
+          `EST-${estimate.id}`,
+          estimate.total
+        );
+      } catch (error) {
+        console.error('Failed to send cost estimate email:', error);
+      }
+    }
   };
 
   return (
@@ -145,6 +211,74 @@ const AgentCostEstimate: React.FC = () => {
         </div>
       </div>
 
+      {/* Edit Modal */}
+      {editingEstimate && (
+        <div className="fixed inset-0 bg-foreground/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-xl border border-border p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-foreground">Edit Cost Estimate</h3>
+              <button
+                onClick={() => setEditingEstimate(null)}
+                className="p-1 rounded hover:bg-muted"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Base Cost (USD)</label>
+                <input
+                  type="number"
+                  value={editForm.baseCost}
+                  onChange={(e) => setEditForm({ ...editForm, baseCost: parseFloat(e.target.value) || 0 })}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Additional Fees (USD)</label>
+                <input
+                  type="number"
+                  value={editForm.additionalFees}
+                  onChange={(e) => setEditForm({ ...editForm, additionalFees: parseFloat(e.target.value) || 0 })}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Description</label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="input-field"
+                  rows={3}
+                />
+              </div>
+              <div className="bg-muted rounded-lg p-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-foreground">Total:</span>
+                  <span className="text-xl font-bold text-primary">
+                    ${(editForm.baseCost + editForm.additionalFees).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditingEstimate(null)}
+                  className="btn-secondary flex-1"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="btn-primary flex-1"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Existing Estimates */}
       <div>
         <h3 className="font-semibold text-foreground mb-4">Existing Estimates</h3>
@@ -193,12 +327,34 @@ const AgentCostEstimate: React.FC = () => {
                 </div>
 
                 <div className="flex gap-2 mt-4">
-                  <button className="btn-secondary flex-1 text-sm">
-                    Edit
-                  </button>
-                  <button className="btn-primary flex-1 text-sm">
-                    Send to Client
-                  </button>
+                  {estimate.status === 'draft' && (
+                    <>
+                      <button 
+                        className="btn-secondary flex-1 text-sm flex items-center justify-center gap-2"
+                        onClick={() => handleEdit(estimate)}
+                      >
+                        <Edit className="w-4 h-4" />
+                        Edit
+                      </button>
+                      <button 
+                        className="btn-primary flex-1 text-sm flex items-center justify-center gap-2"
+                        onClick={() => handleSendToClient(estimate)}
+                      >
+                        <Send className="w-4 h-4" />
+                        Send to Client
+                      </button>
+                    </>
+                  )}
+                  {estimate.status === 'sent' && (
+                    <button className="btn-secondary flex-1 text-sm" disabled>
+                      Sent to Client
+                    </button>
+                  )}
+                  {estimate.status === 'approved' && (
+                    <button className="btn-secondary flex-1 text-sm bg-success/15 text-success" disabled>
+                      Approved by Client
+                    </button>
+                  )}
                 </div>
               </div>
             );

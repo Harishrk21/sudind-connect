@@ -19,12 +19,16 @@ import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminCases from "@/pages/admin/AdminCases";
 import AdminCaseDetail from "@/pages/admin/AdminCaseDetail";
 import AdminClients from "@/pages/admin/AdminClients";
+import ClientProfile from "@/pages/admin/ClientProfile";
 import AdminAgents from "@/pages/admin/AdminAgents";
+import AgentProfile from "@/pages/admin/AgentProfile";
 import AdminContracts from "@/pages/admin/AdminContracts";
+import ContractDetails from "@/pages/admin/ContractDetails";
 import AdminFinancials from "@/pages/admin/AdminFinancials";
 import AdminAIProcessing from "@/pages/admin/AdminAIProcessing";
 import AdminIntegrations from "@/pages/admin/AdminIntegrations";
 import AdminReports from "@/pages/admin/AdminReports";
+import AdminAuditLog from "@/pages/admin/AdminAuditLog";
 import AdminMessages from "@/pages/admin/AdminMessages";
 
 // Agent pages
@@ -93,15 +97,16 @@ const AppRoutes = () => {
         <Route path="cases" element={<AdminCases />} />
         <Route path="cases/:caseId" element={<AdminCaseDetail />} />
         <Route path="clients" element={<AdminClients />} />
-        <Route path="clients/:clientId" element={<div>Client Profile</div>} />
+        <Route path="clients/:clientId" element={<ClientProfile />} />
         <Route path="agents" element={<AdminAgents />} />
-        <Route path="agents/:agentId" element={<div>Agent Profile</div>} />
+        <Route path="agents/:agentId" element={<AgentProfile />} />
         <Route path="contracts" element={<AdminContracts />} />
-        <Route path="contracts/:contractId" element={<div>Contract Details</div>} />
+        <Route path="contracts/:contractId" element={<ContractDetails />} />
         <Route path="financials" element={<AdminFinancials />} />
         <Route path="ai-processing" element={<AdminAIProcessing />} />
         <Route path="integrations" element={<AdminIntegrations />} />
         <Route path="reports" element={<AdminReports />} />
+        <Route path="audit-log" element={<AdminAuditLog />} />
         <Route path="messages" element={<AdminMessages />} />
         <Route path="settings" element={<Settings />} />
       </Route>

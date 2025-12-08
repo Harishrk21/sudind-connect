@@ -43,7 +43,7 @@ const Logo: React.FC<LogoProps> = ({
       </div>
       {showText && (
         <div className="flex flex-col">
-          <span className={cn("font-bold text-foreground leading-tight", textSizes[size], textClassName)}>
+          <span className={cn("font-bold leading-tight", textSizes[size], textClassName)} style={{ color: '#FDF6E3' }}>
             SudInd
           </span>
           <span className={cn("text-xs text-muted-foreground leading-tight -mt-0.5", textSizes[size])}>

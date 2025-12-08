@@ -5,8 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useDataStore } from '@/contexts/DataStore';
-import { CaseStatus } from '@/lib/mockData';
+import { CaseStatus, getUserById } from '@/lib/mockData';
 import { AlertCircle } from 'lucide-react';
+import { EmailWorkflowService } from '@/lib/notificationService';
 
 interface UpdateCaseStatusFormProps {
   open: boolean;
@@ -16,7 +17,7 @@ interface UpdateCaseStatusFormProps {
 }
 
 const UpdateCaseStatusForm: React.FC<UpdateCaseStatusFormProps> = ({ open, onOpenChange, caseId, currentStatus }) => {
-  const { updateCase, addNotification } = useDataStore();
+  const { updateCase, addNotification, cases, users } = useDataStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -43,12 +44,28 @@ const UpdateCaseStatusForm: React.FC<UpdateCaseStatusFormProps> = ({ open, onOpe
     try {
       updateCase(caseId, { status });
 
+      const caseData = cases.find(c => c.caseId === caseId);
+      const client = caseData ? getUserById(caseData.clientId) : undefined;
+
       addNotification({
         userId: 1,
         title: 'Case Status Updated',
         message: `Case ${caseId} status changed to ${statusOptions.find(s => s.value === status)?.label}`,
         type: 'info',
       });
+
+      // Send email notification to client
+      if (client?.email) {
+        try {
+          await EmailWorkflowService.sendCaseStatusUpdate(
+            client.email,
+            caseId,
+            statusOptions.find(s => s.value === status)?.label || status
+          );
+        } catch (error) {
+          console.error('Failed to send email notification:', error);
+        }
+      }
 
       setSuccess(true);
       setNotes('');
