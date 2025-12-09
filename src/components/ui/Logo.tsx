@@ -1,4 +1,6 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Building2, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -8,6 +10,7 @@ interface LogoProps {
   iconClassName?: string;
   size?: 'sm' | 'md' | 'lg';
   showText?: boolean;
+  clickable?: boolean;
 }
 
 const Logo: React.FC<LogoProps> = ({ 
@@ -15,8 +18,21 @@ const Logo: React.FC<LogoProps> = ({
   textClassName, 
   iconClassName, 
   size = 'md',
-  showText = true 
+  showText = true,
+  clickable = true
 }) => {
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+
+  const handleClick = () => {
+    if (!clickable) return;
+    
+    if (!isAuthenticated) {
+      navigate('/');
+    } else if (user) {
+      navigate(`/${user.role}`);
+    }
+  };
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
@@ -29,8 +45,27 @@ const Logo: React.FC<LogoProps> = ({
     lg: 'text-lg',
   };
 
+  // Determine text color based on context
+  // If textClassName is provided, use it; otherwise use default cream color for dark backgrounds
+  // For light backgrounds (like landing/login headers), don't set cream color
+  const shouldUseCreamColor = textClassName?.includes('text-primary-foreground') || 
+                              textClassName?.includes('text-white') || 
+                              (!textClassName && className?.includes('dark'));
+  const logoTextColor = shouldUseCreamColor ? '#FDF6E3' : undefined;
+
   return (
-    <div className={cn("flex items-center gap-3", className)}>
+    <div 
+      className={cn("flex items-center gap-3", className, clickable && "cursor-pointer hover:opacity-80 transition-opacity")}
+      onClick={handleClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      } : undefined}
+    >
       <div className={cn(
         "relative rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg",
         sizeClasses[size],
@@ -43,7 +78,10 @@ const Logo: React.FC<LogoProps> = ({
       </div>
       {showText && (
         <div className="flex flex-col">
-          <span className={cn("font-bold leading-tight", textSizes[size], textClassName)} style={{ color: '#FDF6E3' }}>
+          <span 
+            className={cn("font-bold leading-tight", textSizes[size], textClassName)} 
+            style={logoTextColor ? { color: logoTextColor } : undefined}
+          >
             SudInd
           </span>
           <span className={cn("text-xs text-muted-foreground leading-tight -mt-0.5", textSizes[size])}>

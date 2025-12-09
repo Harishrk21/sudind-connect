@@ -10,7 +10,9 @@ import { DataStoreProvider } from "@/contexts/DataStore";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 // Pages
+import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import NotFound from "@/pages/NotFound";
 import Settings from "@/pages/Settings";
 
@@ -44,6 +46,7 @@ import ClientPayments from "@/pages/client/ClientPayments";
 import ClientPaymentGateway from "@/pages/client/ClientPaymentGateway";
 import ClientUpload from "@/pages/client/ClientUpload";
 import ClientChat from "@/pages/client/ClientChat";
+import ClientBooking from "@/pages/client/ClientBooking";
 
 const queryClient = new QueryClient();
 
@@ -76,16 +79,26 @@ const RoleRedirect: React.FC = () => {
   return <Navigate to={`/${user?.role}`} replace />;
 };
 
+// Root route handler - show landing page for unauthenticated, redirect authenticated users
+const RootRoute: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
+  
+  if (isAuthenticated && user) {
+    return <Navigate to={`/${user.role}`} replace />;
+  }
+  
+  return <Landing />;
+};
+
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
   
   return (
     <Routes>
       {/* Public routes */}
+      <Route path="/" element={<RootRoute />} />
       <Route path="/login" element={isAuthenticated ? <RoleRedirect /> : <Login />} />
-      
-      {/* Root redirect */}
-      <Route path="/" element={<RoleRedirect />} />
+      <Route path="/register" element={isAuthenticated ? <RoleRedirect /> : <Register />} />
       
       {/* Admin routes */}
       <Route path="/admin" element={
@@ -139,6 +152,7 @@ const AppRoutes = () => {
         <Route path="payments" element={<ClientPayments />} />
         <Route path="payment-gateway" element={<ClientPaymentGateway />} />
         <Route path="chat" element={<ClientChat />} />
+        <Route path="booking" element={<ClientBooking />} />
         <Route path="messages" element={<AdminMessages />} />
         <Route path="settings" element={<Settings />} />
       </Route>
